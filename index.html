@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GameScout — сравнение цен на игры</title>
+  <meta name="description" content="Черновой интерфейс агрегатора цен на игры." />
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: rgba(20, 28, 52, 0.82);
+      --panel-strong: #151d35;
+      --text: #f5f7ff;
+      --muted: #9ba7c4;
+      --accent: #7c5cff;
+      --accent-2: #18c8b7;
+      --border: rgba(255, 255, 255, 0.09);
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+      --success: #38d39f;
+      --warning: #ffcf66;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 15% 15%, rgba(124, 92, 255, 0.22), transparent 30%),
+        radial-gradient(circle at 85% 10%, rgba(24, 200, 183, 0.12), transparent 30%),
+        linear-gradient(180deg, #0b1020 0%, #0a0f1d 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .container {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(11, 16, 32, 0.72);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav {
+      height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 12px 30px rgba(124, 92, 255, 0.34);
+      font-size: 18px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 22px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .nav-action {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      padding: 10px 15px;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    .hero {
+      padding: 86px 0 48px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      border-radius: 999px;
+      color: #cbd2e6;
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(42px, 8vw, 78px);
+      line-height: 0.98;
+      letter-spacing: -0.06em;
+      max-width: 900px;
+      margin-inline: auto;
+    }
+
+    .gradient-text {
+      background: linear-gradient(90deg, #ffffff 0%, #a995ff 50%, #54e0d0 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero p {
+      color: var(--muted);
+      max-width: 720px;
+      margin: 24px auto 34px;
+      font-size: 18px;
+      line-height: 1.6;
+    }
+
+    .search-wrap {
+      max-width: 790px;
+      margin: 0 auto;
+      padding: 10px;
+      display: flex;
+      gap: 10px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .search-wrap input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      padding: 15px 18px;
+      font-size: 16px;
+    }
+
+    .search-wrap input::placeholder { color: #7885a6; }
+
+    .primary-btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 0 24px;
+      font-weight: 750;
+      cursor: pointer;
+      color: white;
+      background: linear-gradient(135deg, var(--accent), #5b8cff);
+      box-shadow: 0 10px 24px rgba(124, 92, 255, 0.28);
+    }
+
+
+    .search-shell {
+      max-width: 790px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .search-shell .search-wrap {
+      margin: 0;
+    }
+
+    .suggestions {
+      position: absolute;
+      top: calc(100% + 10px);
+      left: 0;
+      right: 0;
+      display: none;
+      overflow: hidden;
+      text-align: left;
+      background: rgba(19, 27, 49, 0.98);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      z-index: 30;
+    }
+
+    .suggestions.visible {
+      display: block;
+    }
+
+    .suggestion {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+      color: var(--text);
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .suggestion:last-child {
+      border-bottom: 0;
+    }
+
+    .suggestion:hover,
+    .suggestion.active {
+      background: rgba(124, 92, 255, 0.13);
+    }
+
+
+    .catalog-badge {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      padding: 5px 9px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.04);
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
+    .suggestion-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .suggestion-category {
+      color: var(--accent-2);
+      font-size: 11px;
+    }
+
+    .suggestion-name {
+      font-weight: 750;
+    }
+
+    .suggestion-meta {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .helper {
+      margin-top: 14px;
+      color: #7f8aa8;
+      font-size: 13px;
+    }
+
+    .section {
+      padding: 34px 0 76px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 24px;
+      margin-bottom: 20px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: -0.03em;
+    }
+
+    .section-head p {
+      margin: 6px 0 0;
+      color: var(--muted);
+    }
+
+
+    .filters {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .platform-select {
+      background: var(--panel-strong);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 11px 14px;
+    }
+
+    .cover {
+      background-size: cover !important;
+      background-position: center !important;
+    }
+
+    .cover-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.78));
+      z-index: 0;
+    }
+
+    .cover-code,
+    .cover small {
+      position: relative;
+      z-index: 1;
+    }
+
+    .sort-select {
+      background: var(--panel-strong);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 11px 14px;
+    }
+
+    .game-card {
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      gap: 24px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .cover {
+      min-height: 250px;
+      border-radius: 18px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: end;
+      padding: 18px;
+      background:
+        linear-gradient(180deg, transparent 28%, rgba(0,0,0,0.78) 100%),
+        radial-gradient(circle at 30% 20%, rgba(255,255,255,0.2), transparent 22%),
+        linear-gradient(135deg, #3f2c68, #12182e 55%, #1b4f53);
+    }
+
+    .cover-code {
+      position: absolute;
+      top: 22px;
+      left: 18px;
+      font-weight: 900;
+      font-size: 42px;
+      letter-spacing: -0.08em;
+      color: rgba(255,255,255,0.88);
+      z-index: 1;
+    }
+
+    .cover small {
+      color: #d6daea;
+      position: relative;
+      z-index: 1;
+    }
+
+    .game-info h3 {
+      font-size: 30px;
+      margin: 4px 0 8px;
+      letter-spacing: -0.04em;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .tag {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: #c7cfe4;
+      font-size: 12px;
+    }
+
+    .offers {
+      display: grid;
+      gap: 10px;
+    }
+
+    .offer {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr .7fr auto;
+      gap: 16px;
+      align-items: center;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.035);
+      transition: transform .18s ease, border-color .18s ease;
+    }
+
+    .offer:hover {
+      transform: translateY(-2px);
+      border-color: rgba(124, 92, 255, 0.45);
+    }
+
+    .store {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+    }
+
+    .store-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,0.08);
+      font-size: 14px;
+    }
+
+    .edition, .region {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .price {
+      text-align: right;
+    }
+
+    .price strong {
+      display: block;
+      font-size: 19px;
+    }
+
+    .price span {
+      color: var(--success);
+      font-size: 12px;
+    }
+
+    .buy-btn {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .empty {
+      display: none;
+      text-align: center;
+      padding: 58px 20px;
+      border: 1px dashed var(--border);
+      border-radius: 20px;
+      color: var(--muted);
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .feature {
+      background: rgba(255,255,255,0.035);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .feature strong {
+      display: block;
+      margin-bottom: 7px;
+    }
+
+    .feature span {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 0 38px;
+      color: #73809e;
+      font-size: 13px;
+    }
+
+    @media (max-width: 820px) {
+      .nav-links { display: none; }
+      .hero { padding-top: 58px; }
+      .search-wrap { flex-direction: column; }
+      .primary-btn { padding: 15px; }
+      .game-card { grid-template-columns: 1fr; }
+      .cover { min-height: 190px; }
+      .offer { grid-template-columns: 1fr 1fr; }
+      .buy-btn { grid-column: 1 / -1; }
+      .features { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 520px) {
+      .section-head { align-items: stretch; flex-direction: column; }
+      .offer { grid-template-columns: 1fr; }
+      .price { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <a class="brand" href="#">
+        <span class="brand-badge">G</span>
+        <span>GameScout</span>
+      </a>
+      <nav class="nav-links">
+        <a href="#search">Поиск</a>
+        <a href="#offers">Предложения</a>
+        <a href="#features">Возможности</a>
+      </nav>
+      <button class="nav-action" onclick="alert('Личный кабинет добавим следующим модулем.')">Войти</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero container" id="search">
+      <div class="eyebrow">⚡ Черновой MVP агрегатора цен</div>
+      <h1>Найди игру. <span class="gradient-text">Сравни цены.</span> Не переплачивай.</h1>
+      <p>
+        Один поиск по Steam, GGSell и другим магазинам. Цены, издания,
+        регионы активации и лучшие предложения в одном месте.
+      </p>
+
+      <div class="search-shell">
+        <form class="search-wrap" id="searchForm">
+          <input id="searchInput" type="search" value="Dead by Daylight" placeholder="Например, Dead by Daylight" autocomplete="off" aria-autocomplete="list" aria-controls="suggestions" />
+          <button class="primary-btn" type="submit">Найти игру</button>
+        </form>
+        <div class="suggestions" id="suggestions" role="listbox"></div>
+      </div>
+      <div class="helper">Сейчас подключены демонстрационные данные. Реальные источники добавим отдельным серверным модулем.</div>
+    </section>
+
+    <section class="section container" id="offers">
+      <div class="section-head">
+        <div>
+          <h2>Лучшие предложения</h2>
+          <p id="resultText">Найдено 3 предложения для Dead by Daylight</p>
+        </div>
+        <div class="filters">
+          <select class="platform-select" id="platformSelect" aria-label="Фильтр по площадке">
+            <option value="all">Все площадки</option>
+          </select>
+          <select class="sort-select" id="sortSelect" aria-label="Сортировка">
+            <option value="asc">Сначала дешевле</option>
+            <option value="desc">Сначала дороже</option>
+          </select>
+        </div>
+      </div>
+
+      <article class="game-card" id="gameCard">
+        <div class="cover" id="gameCover">
+          <div class="cover-overlay"></div>
+          <div class="cover-code" id="coverCode">DBD</div>
+          <small id="coverMeta">Хоррор • Мультиплеер • PC</small>
+        </div>
+
+        <div class="game-info">
+          <h3 id="gameTitle">Dead by Daylight</h3>
+          <div class="tags">
+            <span class="tag">Steam</span>
+            <span class="tag">GGSell</span>
+            <span class="tag">PC</span>
+            <span class="tag">Сортировка по цене</span>
+          </div>
+          <div class="offers" id="offersList"></div>
+        </div>
+      </article>
+
+      <div class="empty" id="emptyState">
+        Такой игры в демо-базе пока нет. Попробуй «Dead by Daylight», «Overwatch 2» или «Cyberpunk 2077».
+      </div>
+
+      <div class="features" id="features">
+        <div class="feature">
+          <strong>История цен</strong>
+          <span>Следующий этап: график за 30, 90 и 365 дней.</span>
+        </div>
+        <div class="feature">
+          <strong>Уведомления</strong>
+          <span>Сообщение в Telegram или на почту, когда цена снизится.</span>
+        </div>
+        <div class="feature">
+          <strong>Безопасность покупки</strong>
+          <span>Рейтинг продавца, тип товара и регион активации до перехода в магазин.</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      GameScout MVP • Демонстрационный интерфейс • Реальные цены пока не подключены
+    </div>
+  </footer>
+
+  <script>
+    const catalog = {
+      "dead by daylight": {
+        category: "Многопользовательская",
+        title: "Dead by Daylight",
+        aliases: ["дед бай дейлайт", "дбд"],
+        code: "DBD",
+        meta: "Хоррор • Мультиплеер • PC",
+        colors: ["#3f2c68", "#12182e", "#1b4f53"],
+        cover: "https://cdn.cloudflare.steamstatic.com/steam/apps/381210/header.jpg",
+        offers: [
+          { store: "GGSell", icon: "GG", edition: "Standard Edition", region: "РФ / СНГ", price: 749, note: "Лучшее предложение" },
+          { store: "Steam", icon: "ST", edition: "Standard Edition", region: "Регион Steam", price: 1099, note: "Официальный магазин" },
+          { store: "Game Store", icon: "GS", edition: "Deluxe Bundle", region: "Global", price: 1590, note: "Расширенное издание" }
+        ]
+      },
+      "overwatch 2": {
+        category: "Многопользовательская",
+        title: "Overwatch 2",
+        aliases: ["овер", "овервотч", "овервотч 2", "over"],
+        code: "OW2",
+        meta: "Шутер • Командная игра • PC",
+        colors: ["#be5f35", "#44336f", "#101a2d"],
+        cover: "https://cdn.cloudflare.steamstatic.com/steam/apps/2357570/header.jpg",
+        offers: [
+          { store: "Battle.net", icon: "BN", edition: "Base Game", region: "Global", price: 0, note: "Бесплатная игра" },
+          { store: "GGSell", icon: "GG", edition: "Coins Pack", region: "РФ / СНГ", price: 890, note: "Внутриигровая валюта" }
+        ]
+      },
+      "overcooked! 2": {
+        category: "Многопользовательская",
+        title: "Overcooked! 2",
+        aliases: ["оверкук", "оверкук 2", "overcooked"],
+        code: "OC2",
+        meta: "Кооператив • Казуальная • PC",
+        colors: ["#db7b31", "#6c3939", "#17233d"],
+        cover: "https://cdn.cloudflare.steamstatic.com/steam/apps/728880/header.jpg",
+        offers: [
+          { store: "Steam", icon: "ST", edition: "Standard Edition", region: "Регион Steam", price: 699, note: "Официальный магазин" },
+          { store: "GGSell", icon: "GG", edition: "Steam Key", region: "РФ / СНГ", price: 449, note: "Лучшее предложение" }
+        ]
+      },
+      "overlord": {
+        category: "Одиночная",
+        title: "Overlord",
+        aliases: ["оверлорд", "over"],
+        code: "OVR",
+        meta: "Экшен • RPG • PC",
+        colors: ["#4a221f", "#241631", "#101923"],
+        cover: "https://cdn.cloudflare.steamstatic.com/steam/apps/11450/header.jpg",
+        offers: [
+          { store: "Steam", icon: "ST", edition: "Standard Edition", region: "Регион Steam", price: 399, note: "Официальный магазин" }
+        ]
+      },
+      "cyberpunk 2077": {
+        category: "Одиночная",
+        title: "Cyberpunk 2077",
+        aliases: ["киберпанк", "киберпанк 2077"],
+        code: "CP77",
+        meta: "RPG • Открытый мир • PC",
+        colors: ["#d6be17", "#6a4127", "#172036"],
+        cover: "https://cdn.cloudflare.steamstatic.com/steam/apps/1091500/header.jpg",
+        offers: [
+          { store: "GGSell", icon: "GG", edition: "Standard Edition", region: "РФ / СНГ", price: 1490, note: "Лучшее предложение" },
+          { store: "Steam", icon: "ST", edition: "Standard Edition", region: "Регион Steam", price: 1999, note: "Официальный магазин" },
+          { store: "GOG", icon: "GOG", edition: "Ultimate Edition", region: "Global", price: 2999, note: "Без DRM" }
+        ]
+      }
+    };
+
+
+    const popularMultiplayer = ["Counter-Strike 2", "Dota 2", "PUBG: BATTLEGROUNDS", "Apex Legends", "Fortnite", "Call of Duty: Warzone", "Overwatch 2", "Valorant", "League of Legends", "Rocket League", "Minecraft", "Roblox", "Grand Theft Auto Online", "Tom Clancy's Rainbow Six Siege", "Rust", "Dead by Daylight", "Warframe", "Destiny 2", "Marvel Rivals", "Palworld", "Helldivers 2", "Team Fortress 2", "The Finals", "Delta Force", "Battlefield 2042", "Call of Duty: Black Ops 6", "Call of Duty: Modern Warfare III", "Escape from Tarkov", "Hunt: Showdown 1896", "DayZ", "ARK: Survival Ascended", "ARK: Survival Evolved", "Sea of Thieves", "No Man's Sky", "Fall Guys", "Among Us", "Brawlhalla", "Street Fighter 6", "Tekken 8", "Mortal Kombat 1", "EA Sports FC 26", "NBA 2K26", "NBA 2K25", "eFootball", "Forza Horizon 5", "Gran Turismo 7", "The Crew Motorfest", "Need for Speed Unbound", "iRacing", "Assetto Corsa Competizione", "World of Warcraft", "Final Fantasy XIV Online", "The Elder Scrolls Online", "Guild Wars 2", "Lost Ark", "Black Desert", "New World: Aeternum", "Path of Exile", "Path of Exile 2", "Diablo IV", "Monster Hunter Wilds", "Monster Hunter: World", "Monster Hunter Rise", "Genshin Impact", "Honkai: Star Rail", "Wuthering Waves", "Once Human", "Throne and Liberty", "Albion Online", "EVE Online", "Old School RuneScape", "RuneScape", "World of Tanks", "World of Warships", "War Thunder", "Crossout", "Enlisted", "Squad", "Arma 3", "Ready or Not", "Insurgency: Sandstorm", "Chivalry 2", "Mordhau", "Deep Rock Galactic", "Left 4 Dead 2", "Payday 2", "Payday 3", "Phasmophobia", "Lethal Company", "Content Warning", "Project Zomboid", "Don't Starve Together", "Terraria", "Stardew Valley", "Valheim", "Raft", "Grounded", "Sons of the Forest", "7 Days to Die", "Core Keeper"];
+    const popularSingleplayer = ["Cyberpunk 2077", "The Witcher 3: Wild Hunt", "Red Dead Redemption 2", "Baldur's Gate 3", "Elden Ring", "Black Myth: Wukong", "Hogwarts Legacy", "God of War Ragnarök", "God of War", "Marvel's Spider-Man 2", "Marvel's Spider-Man Remastered", "Marvel's Spider-Man: Miles Morales", "The Last of Us Part I", "The Last of Us Part II Remastered", "Ghost of Tsushima Director's Cut", "Horizon Forbidden West", "Horizon Zero Dawn Remastered", "Death Stranding Director's Cut", "Days Gone", "Uncharted: Legacy of Thieves Collection", "Resident Evil 4", "Resident Evil Village", "Resident Evil 2", "Resident Evil 3", "Resident Evil 7 Biohazard", "Silent Hill 2", "Alan Wake 2", "Control Ultimate Edition", "Dead Space", "The Callisto Protocol", "Assassin's Creed Shadows", "Assassin's Creed Valhalla", "Assassin's Creed Odyssey", "Assassin's Creed Origins", "Assassin's Creed Mirage", "Far Cry 6", "Far Cry 5", "Star Wars Outlaws", "Star Wars Jedi: Survivor", "Star Wars Jedi: Fallen Order", "Indiana Jones and the Great Circle", "Avowed", "Starfield", "The Elder Scrolls V: Skyrim Special Edition", "Fallout 4", "Fallout: New Vegas", "Mass Effect Legendary Edition", "Dragon Age: The Veilguard", "Dragon Age: Inquisition", "Kingdom Come: Deliverance II", "Kingdom Come: Deliverance", "Mount & Blade II: Bannerlord", "Final Fantasy VII Rebirth", "Final Fantasy VII Remake Intergrade", "Final Fantasy XVI", "Persona 5 Royal", "Persona 3 Reload", "Metaphor: ReFantazio", "Like a Dragon: Infinite Wealth", "Yakuza: Like a Dragon", "NieR: Automata", "Clair Obscur: Expedition 33", "Deathloop", "Dishonored 2", "Prey", "DOOM Eternal", "DOOM", "Wolfenstein II: The New Colossus", "Metro Exodus", "Atomic Heart", "S.T.A.L.K.E.R. 2: Heart of Chornobyl", "Dying Light 2 Stay Human", "Dying Light", "Hitman World of Assassination", "Metal Gear Solid V: The Phantom Pain", "Sekiro: Shadows Die Twice", "Lies of P", "Dark Souls III", "Nioh 2", "Wo Long: Fallen Dynasty", "Remnant II", "Armored Core VI: Fires of Rubicon", "Devil May Cry 5", "Bayonetta", "Hi-Fi Rush", "Hades", "Hades II", "Hollow Knight", "Ori and the Will of the Wisps", "Celeste", "Cuphead", "Dave the Diver", "Balatro", "Vampire Survivors", "Slay the Spire", "Disco Elysium", "Outer Wilds", "Subnautica", "Factorio", "RimWorld"];
+
+    function makeCode(title) {
+      return title
+        .replace(/[^a-zA-Z0-9а-яА-ЯёЁ ]/g, "")
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 3)
+        .map(word => word[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 4) || "GAME";
+    }
+
+    function addPopularGames(titles, category) {
+      titles.forEach((title) => {
+        const key = normalize(title);
+        if (catalog[key]) {
+          catalog[key].category = category;
+          return;
+        }
+        catalog[key] = {
+          title,
+          aliases: [],
+          code: makeCode(title),
+          category,
+          meta: category === "Многопользовательская"
+            ? "Популярная многопользовательская игра"
+            : "Популярная одиночная игра",
+          colors: category === "Многопользовательская"
+            ? ["#1c5c72", "#252b54", "#12182e"]
+            : ["#714128", "#47305f", "#12182e"],
+          cover: "",
+          offers: []
+        };
+      });
+    }
+
+    addPopularGames(popularMultiplayer, "Многопользовательская");
+    addPopularGames(popularSingleplayer, "Одиночная");
+
+    const form = document.getElementById("searchForm");
+    const input = document.getElementById("searchInput");
+    const suggestions = document.getElementById("suggestions");
+    const offersList = document.getElementById("offersList");
+    const gameCard = document.getElementById("gameCard");
+    const emptyState = document.getElementById("emptyState");
+    const gameTitle = document.getElementById("gameTitle");
+    const catalogBadge = document.getElementById("catalogBadge");
+    const resultText = document.getElementById("resultText");
+    const sortSelect = document.getElementById("sortSelect");
+    const platformSelect = document.getElementById("platformSelect");
+    const coverCode = document.getElementById("coverCode");
+    const coverMeta = document.getElementById("coverMeta");
+    const gameCover = document.getElementById("gameCover");
+
+    let currentOffers = [];
+    let activeSuggestion = -1;
+    let visibleMatches = [];
+
+    function normalize(value) {
+      return value.trim().toLowerCase().replace(/\s+/g, " ");
+    }
+
+    function formatPrice(value) {
+      return value === 0 ? "Бесплатно" : new Intl.NumberFormat("ru-RU").format(value) + " ₽";
+    }
+
+    function searchableValues(item) {
+      return [item.title, ...(item.aliases || [])].map(normalize);
+    }
+
+    function findMatches(query) {
+      const q = normalize(query);
+      if (!q) return [];
+      const all = Object.values(catalog);
+      const starts = all.filter(item => searchableValues(item).some(value => value.startsWith(q)));
+      const contains = all.filter(item =>
+        !starts.includes(item) && searchableValues(item).some(value => value.includes(q))
+      );
+      return [...starts, ...contains].slice(0, 8);
+    }
+
+    function findExactOrFirst(query) {
+      const q = normalize(query);
+      const exact = Object.values(catalog).find(item =>
+        searchableValues(item).some(value => value === q)
+      );
+      return exact || findMatches(q)[0] || null;
+    }
+
+    function renderSuggestions() {
+      visibleMatches = findMatches(input.value);
+      activeSuggestion = -1;
+
+      if (!input.value.trim() || visibleMatches.length === 0) {
+        suggestions.classList.remove("visible");
+        suggestions.innerHTML = "";
+        return;
+      }
+
+      suggestions.innerHTML = visibleMatches.map((item, index) => `
+        <button class="suggestion" type="button" data-index="${index}" role="option">
+          <span class="suggestion-info">
+            <span class="suggestion-name">${item.title}</span>
+            <span class="suggestion-category">${item.category || "Игра"}</span>
+          </span>
+          <span class="suggestion-meta">${item.meta}</span>
+        </button>
+      `).join("");
+
+      suggestions.classList.add("visible");
+
+      suggestions.querySelectorAll(".suggestion").forEach(button => {
+        button.addEventListener("click", () => {
+          selectSuggestion(Number(button.dataset.index));
+        });
+      });
+    }
+
+    function updateSuggestionHighlight() {
+      suggestions.querySelectorAll(".suggestion").forEach((node, index) => {
+        node.classList.toggle("active", index === activeSuggestion);
+      });
+    }
+
+    function selectSuggestion(index) {
+      const item = visibleMatches[index];
+      if (!item) return;
+      input.value = item.title;
+      suggestions.classList.remove("visible");
+      showGame(item);
+    }
+
+    function refreshPlatformOptions() {
+      const stores = [...new Set(currentOffers.map(offer => offer.store))];
+      const currentValue = platformSelect.value;
+      platformSelect.innerHTML = '<option value="all">Все площадки</option>' +
+        stores.map(store => `<option value="${store}">${store}</option>`).join("");
+      platformSelect.value = stores.includes(currentValue) ? currentValue : "all";
+    }
+
+    function renderOffers() {
+      const direction = sortSelect.value;
+      const selectedPlatform = platformSelect.value;
+
+      const filtered = currentOffers
+        .filter(offer => selectedPlatform === "all" || offer.store === selectedPlatform)
+        .sort((a, b) => direction === "asc" ? a.price - b.price : b.price - a.price);
+
+      offersList.innerHTML = filtered.map(offer => `
+        <div class="offer">
+          <div class="store">
+            <span class="store-icon">${offer.icon}</span>
+            <span>${offer.store}</span>
+          </div>
+          <div class="edition">${offer.edition}</div>
+          <div class="region">${offer.region}</div>
+          <div class="price">
+            <strong>${formatPrice(offer.price)}</strong>
+            <span>${offer.note}</span>
+          </div>
+          <button class="buy-btn" onclick="alert('В рабочей версии здесь будет партнёрская ссылка на магазин.')">Перейти</button>
+        </div>
+      `).join("");
+
+      if (filtered.length === 0) {
+        offersList.innerHTML = '<div class="empty" style="display:block">Игра уже есть в поиске, но реальные предложения магазинов для неё пока не подключены.</div>';
+      }
+    }
+
+    function showGame(item) {
+      if (!item) {
+        gameCard.style.display = "none";
+        emptyState.style.display = "block";
+        resultText.textContent = "Ничего не найдено";
+        return;
+      }
+
+      gameCard.style.display = "grid";
+      emptyState.style.display = "none";
+      gameTitle.textContent = item.title;
+      catalogBadge.textContent = item.category || "Игра";
+      coverCode.textContent = item.code;
+      coverMeta.textContent = item.meta;
+      gameCover.style.backgroundImage = item.cover
+        ? `linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0.72)), url("${item.cover}")`
+        : `linear-gradient(135deg, ${item.colors[0]}, ${item.colors[1]} 55%, ${item.colors[2]})`;
+      currentOffers = item.offers || [];
+      refreshPlatformOptions();
+      resultText.textContent = currentOffers.length
+        ? `Найдено ${currentOffers.length} предложения для ${item.title}`
+        : `${item.title} добавлена в каталог. Цены подключим после интеграции магазинов.`;
+      renderOffers();
+    }
+
+    function runSearch() {
+      suggestions.classList.remove("visible");
+      showGame(findExactOrFirst(input.value));
+    }
+
+    input.addEventListener("input", renderSuggestions);
+
+    input.addEventListener("keydown", (event) => {
+      if (!suggestions.classList.contains("visible")) return;
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        activeSuggestion = Math.min(activeSuggestion + 1, visibleMatches.length - 1);
+        updateSuggestionHighlight();
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        activeSuggestion = Math.max(activeSuggestion - 1, 0);
+        updateSuggestionHighlight();
+      } else if (event.key === "Enter" && activeSuggestion >= 0) {
+        event.preventDefault();
+        selectSuggestion(activeSuggestion);
+      } else if (event.key === "Escape") {
+        suggestions.classList.remove("visible");
+      }
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest(".search-shell")) {
+        suggestions.classList.remove("visible");
+      }
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      runSearch();
+    });
+
+    sortSelect.addEventListener("change", renderOffers);
+    platformSelect.addEventListener("change", renderOffers);
+
+    showGame(catalog["dead by daylight"]);
+  </script>
+</body>
+</html>
