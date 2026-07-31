@@ -1,5 +1,4 @@
-
-    :root {
+:root {
       --bg: #0b1020;
       --panel: rgba(20, 28, 52, 0.82);
       --panel-strong: #151d35;
@@ -517,4 +516,3 @@
       .offer { grid-template-columns: 1fr; }
       .price { text-align: left; }
     }
-  
